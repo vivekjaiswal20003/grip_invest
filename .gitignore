@@ -1,0 +1,19 @@
+# Dependencies
+/node_modules
+
+# Environment variables
+*env
+
+# Logs
+npm-debug.log*
+*.log
+
+# Build output
+/build
+/dist
+
+*.txt
+/.vscode
+
+/backend/node_modules
+/frontend/node_modules

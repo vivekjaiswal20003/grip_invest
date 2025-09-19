@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: grip_invest_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: grip_invest_backend
+    ports:
+      - "3002:3001"
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules # Exclude node_modules from host mount
+
+  frontend:
+    container_name: grip_invest_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      # REACT_APP_BACKEND_URL: http://localhost:3001 # For local development outside docker-compose
+      REACT_APP_BACKEND_URL: http://backend:3001
+      # For communication within docker-compose network, use service name:
+      # REACT_APP_BACKEND_URL: http://backend:3001
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Exclude node_modules from host mount
+
+volumes:
+  db_data:
